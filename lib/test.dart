@@ -4,7 +4,6 @@
 // import 'dart:convert';
 // import 'package:camera/camera.dart';
 
-
 // class CaptureTestScreen extends StatefulWidget {
 //   const CaptureTestScreen({super.key});
 
@@ -27,8 +26,7 @@
 //   //my ipconfig
 //   final String esp32CaptureUrl = "http://192.168.1.10/capture";
 //   final String esp32StreamUrl = "http://192.168.1.10:81/stream";
-//   final String djangoUrl = "http://192.168.1.4:8000/api/upload-image/"; 
-
+//   final String djangoUrl = "http://192.168.1.4:8000/api/upload-image/";
 
 //   @override
 //   void initState() {
@@ -36,7 +34,7 @@
 //     if (useMobileCamera) {
 //       _initializeCamera();
 //     }
-//   } 
+//   }
 
 //   Future<void> _initializeCamera() async {
 //     final cameras = await availableCameras();
@@ -120,7 +118,6 @@
 //       });
 //     }
 //   }
-
 
 //   @override
 //   Widget build(BuildContext context) {
@@ -211,7 +208,6 @@
 //    }
 //   }
 
-
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -241,21 +237,20 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   bool _isActivated = false;
   String _lastCommand = "";
   String _text = "";
-  
 
   CameraController? _cameraController;
   Future<void>? _initializeControllerFuture;
 
-  final String djangoUrl = "http://172.30.10.69:8000/api/upload-image/";
+  // final String djangoUrl = "http://172.30.10.69:8000/api/upload-image/";
 
   final String esp32CaptureUrl = "http://192.168.1.10/capture";
   final String esp32StreamUrl = "http://192.168.1.10:81/stream";
-  //final String djangoUrl = "http://192.168.1.4:8000/api/upload-image/";
+  final String djangoUrl = "http://192.168.1.28:8000/api/upload-image/";
 
   late AudioPlayer _audioPlayer;
   late stt.SpeechToText _speech;
   late FlutterTts _flutterTts;
-  bool _speechAvailable = false;
+  final bool _speechAvailable = false;
   bool _isListening = false;
 
   @override
@@ -277,28 +272,30 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
     // }
   }
 
-    @override
-    void didChangeDependencies(){
-      super.didChangeDependencies();
-      if (!initialized) {
-        final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
-        if (args != null && args.containsKey('useEsp32Cam')) {
-          final bool useEsp32Cam = args['useEsp32Cam'];
-          setState(() {
-            useMobileCamera = !useEsp32Cam; // If ESP32 is false, use mobile
-          });
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!initialized) {
+      final args =
+          ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+      if (args != null && args.containsKey('useEsp32Cam')) {
+        final bool useEsp32Cam = args['useEsp32Cam'];
+        setState(() {
+          useMobileCamera = !useEsp32Cam; // If ESP32 is false, use mobile
+        });
 
-          print('\x1B[34mReceived useEsp32Cam: $useEsp32Cam => useMobileCamera: $useMobileCamera\x1B[0m');
+        print(
+            '\x1B[34mReceived useEsp32Cam: $useEsp32Cam => useMobileCamera: $useMobileCamera\x1B[0m');
 
-          if (!useEsp32Cam) {
-            if (isSpeechRecognitionActiveScreen2) {
-              _initializeCamera();
-            }
+        if (!useEsp32Cam) {
+          if (isSpeechRecognitionActiveScreen2) {
+            _initializeCamera();
           }
         }
-        initialized = true;
       }
+      initialized = true;
     }
+  }
 
   Future<void> _checkPermissions() async {
     if (!_isCameraInitialized || _cameraActivationFailed) {
@@ -321,7 +318,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       _startListening();
     }
   }
-
 
   Future<void> _initializeCamera() async {
     try {
@@ -349,9 +345,8 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       print("\x1B[32m Screen 2 : $isSpeechRecognitionActiveScreen2\x1B[0m");
 
       if (isSpeechRecognitionActiveScreen2) {
-        await _checkPermissions(); 
+        await _checkPermissions();
       }
-
     } catch (e) {
       print("\x1B[31m Camera initialization failed: $e\x1B[0m");
 
@@ -362,7 +357,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       _playFailureSound();
     }
   }
-  
+
   Future<void> captureAndProcess() async {
     setState(() {
       isLoading = true;
@@ -400,15 +395,14 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
         throw Exception("Detection failed: ${result['message']}");
       }
 
-      final sceneDescription = result['scene_description'] ?? "No description available.";
-
+      final sceneDescription =
+          result['scene_description'] ?? "No description available.";
 
       setState(() {
         message = sceneDescription;
       });
 
       await _flutterTts.speak(sceneDescription);
-
     } catch (e) {
       setState(() {
         message = "Error occurred: $e";
@@ -421,10 +415,10 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   }
 
   void onStatus(String val) {
-    if(isSpeechRecognitionActiveScreen2){
+    if (isSpeechRecognitionActiveScreen2) {
       print('\x1B[32m onStatus [2]: $val\x1B[0m');
       if (val == 'done' && !_isActivated) {
-          _startListening();
+        _startListening();
       } else if (val == 'notListening') {
         setState(() {
           _isListening = false;
@@ -435,7 +429,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
   // void _startListening() async {
   //   try {
-  //     if (isSpeechRecognitionActiveScreen2 == true && _isActivated == false && 
+  //     if (isSpeechRecognitionActiveScreen2 == true && _isActivated == false &&
   // _isListening == false && _isInitializing == false) {
 
   //       _isInitializing = true;
@@ -498,7 +492,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
           _isActivated == false &&
           _isListening == false &&
           _isInitializing == false) {
-
         _isInitializing = true;
 
         bool available = await _speech.initialize(onStatus: onStatus);
@@ -519,7 +512,8 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
           final options = stt.SpeechListenOptions(
             cancelOnError: true,
             partialResults: true,
-            listenMode: stt.ListenMode.dictation, // Using dictation mode for continuous speech
+            listenMode: stt.ListenMode
+                .dictation, // Using dictation mode for continuous speech
             autoPunctuation: true,
             enableHapticFeedback: true,
           );
@@ -536,13 +530,13 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
                   _text = newText;
                 });
 
-                if (_lastCommand!.contains('capture') && !_isActivated) {
+                if (_lastCommand.contains('capture') && !_isActivated) {
                   setState(() {
                     _isActivated = true;
                     _text = '';
                   });
                   await captureAndProcess();
-                } else if (_lastCommand!.contains('stop') && !_isActivated) {
+                } else if (_lastCommand.contains('stop') && !_isActivated) {
                   setState(() {
                     _isActivated = true;
                     _text = '';
@@ -591,18 +585,19 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       _cameraActivationFailed = true;
       await _audioPlayer.play(AssetSource('sounds/error.mp3'));
       print("\x1B[32m Camera activation failed\x1B[0m");
-      await _flutterTts.speak('Camera activation failed, returning to landing page');
+      await _flutterTts
+          .speak('Camera activation failed, returning to landing page');
 
       _stopListening();
     }
   }
 
-  void _stopCameraAndGoBack()async{
+  void _stopCameraAndGoBack() async {
     try {
-      print("\x1B[32m Navigating to landing page\x1B[0m"); 
+      print("\x1B[32m Navigating to landing page\x1B[0m");
       Navigator.of(context).pushReplacementNamed('/').then((_) {
         setState(() {
-          _isActivated = false; 
+          _isActivated = false;
           _text = "";
           _cameraActivationFailed = false;
         });
@@ -629,7 +624,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
             await _stopListening();
           },
         ),
-        title: Text('Camera Page',style: TextStyle(fontSize: 10)),
+        title: Text('Camera Page', style: TextStyle(fontSize: 10)),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -645,13 +640,15 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
                 if (val) {
                   if (_cameraController != null) {
-                    await _cameraController?.dispose(); // Dispose the previous controller if it exists
+                    await _cameraController
+                        ?.dispose(); // Dispose the previous controller if it exists
                     _cameraController = null; // Reset the controller
-                    _initializeControllerFuture = null; // Reset the initialization future
+                    _initializeControllerFuture =
+                        null; // Reset the initialization future
                   }
                   await _initializeCamera();
                 } else {
-                   if (_cameraController != null) {
+                  if (_cameraController != null) {
                     await _cameraController?.dispose();
                     _cameraController = null;
                     _initializeControllerFuture = null;
@@ -659,7 +656,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
                 }
               },
             ),
-
             if (useMobileCamera)
               _initializeControllerFuture == null
                   ? Center(child: CircularProgressIndicator())
@@ -674,7 +670,8 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
                             child: CameraPreview(_cameraController!),
                           );
                         } else if (snapshot.hasError) {
-                          return Center(child: Text('Camera Error: ${snapshot.error}'));
+                          return Center(
+                              child: Text('Camera Error: ${snapshot.error}'));
                         } else {
                           return Center(child: CircularProgressIndicator());
                         }
@@ -697,11 +694,8 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
                   ),
                 ),
               ),
-
             SizedBox(height: 20),
-
             if (isLoading) CircularProgressIndicator(),
-
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
@@ -710,15 +704,12 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
                 style: TextStyle(fontSize: 14),
               ),
             ),
-
             ElevatedButton.icon(
               icon: Icon(Icons.camera_alt),
               label: Text("Capture & Process OCR"),
               onPressed: isLoading ? null : captureAndProcess,
             ),
-
             SizedBox(height: 10),
-
             ElevatedButton.icon(
               icon: Icon(_isListening ? Icons.mic_off : Icons.mic),
               label: Text(_isListening ? "Stop Listening" : "Start Listening"),
@@ -728,7 +719,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
                     }
                   : null,
             ),
-
             SizedBox(height: 30),
           ],
         ),
