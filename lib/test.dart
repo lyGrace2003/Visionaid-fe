@@ -26,9 +26,11 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   bool _cameraActivationFailed = false;
   bool _isCameraInitialized = false;
   bool _isActivated = false;
+  bool micPerm = false;
   String _lastCommand = "";
   String _text = "Listening for commands...";
   String lastError = '';
+  
   
 
   CameraController? _cameraController;
@@ -60,9 +62,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       });
     });
     _checkPermissions();
-    // if (useMobileCamera) {
-    //   _initializeCamera();
-    // }
   }
 
     @override
@@ -78,9 +77,11 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
           print('\x1B[34mReceived useEsp32Cam: $useEsp32Cam => useMobileCamera: $useMobileCamera\x1B[0m');
 
-          if (!useEsp32Cam) {
-            if (isSpeechRecognitionActiveScreen2) {
+          if(isSpeechRecognitionActiveScreen2){
+            if (!useEsp32Cam) {
               _initializeCamera();
+            }else{
+              _initializeSpeechRecognizer();
             }
           }
         }
@@ -89,11 +90,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
     }
 
   Future<void> _checkPermissions() async {
-    // if (!_isCameraInitialized || _cameraActivationFailed) {
-    //   print('\x1B[33m Camera is not ready or activation failed\x1B[0m');
-    //   return; // Return early if camera is not ready or initialization failed
-    // }
-
     final micStatus = await Permission.microphone.request();
     if (!micStatus.isGranted) {
       print('\x1B[31m Microphone permission denied\x1B[0m');
@@ -105,23 +101,25 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
     print("\x1B[32m Screen 2 : $isSpeechRecognitionActiveScreen2\x1B[0m");
 
     if (isSpeechRecognitionActiveScreen2) {
-      print("\x1B[34m Speech recognition active on TestCamera screen\x1B[0m");
-
-      await Future.delayed(Duration(milliseconds: 500));
-      _initializeSpeechRecognizer();
+      print("\x1B[34m Microphone Permission granted\x1B[0m");
+      micPerm = true;
     }
   }
 
   // Initialize the speech recognition service
   void _initializeSpeechRecognizer() async {
-    bool available = await _speech.initialize(
-      onStatus: onStatus,
-      onError: errorListener,
-    );
-    if (available) {
-      print('Speech recognition is available');
-    } else {
-      print('Speech recognition is not available');
+    if (micPerm){
+      print("\x1B[36m Initializing Speech Recognizer...\x1B[0m");
+      bool available = await _speech.initialize(
+        onStatus: onStatus,
+        onError: errorListener,
+      );
+      if (available) {
+        print('\x1B[36m Speech recognition is available\x1B[0m');
+        _startListening();
+      } else {
+        print('\x1B[36m Speech recognition is not available\x1B[0m');
+      }
     }
   }
 
@@ -133,7 +131,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
       _cameraController = CameraController(
         camera,
-        ResolutionPreset.high,
+        ResolutionPreset.medium,
         enableAudio: false,
       );
 
@@ -150,8 +148,8 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       print("\x1B[32m Camera initialized\x1B[0m");
 
       if (_isCameraInitialized || !_cameraActivationFailed) {
-        _startListening(); 
-      }
+          _initializeSpeechRecognizer();
+        }
 
     } catch (e) {
       print("\x1B[31m Camera initialization failed: $e\x1B[0m");
@@ -208,6 +206,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
         message = sceneDescription;
       });
 
+      
       await _flutterTts.speak(sceneDescription);
 
     } catch (e) {
@@ -246,65 +245,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       lastError = '\x1B[31m ${error.errorMsg} - Permanent: ${error.permanent}\x1B[0m"';
     });
   }
-
-  // void _startListening() async {
-  //   try {
-  //     if (isSpeechRecognitionActiveScreen2 == true && _isActivated == false && 
-  // _isListening == false && _isInitializing == false) {
-
-  //       _isInitializing = true;
-
-  //       bool available = await _speech.initialize(onStatus: onStatus);
-  //       print("\x1B[32m Availabe = $available\x1B[0m");
-  //       if (available) {
-  //         print("\x1B[32m Start Speech recognition\x1B[0m");
-
-  //         setState(() {
-  //           _isListening = true;
-  //           _isActivated = false;
-  //           _text = "Listening for commands...";
-  //         });
-
-  //         await _speech.listen(
-  //           onResult: (result) async {
-  //             final newText = result.recognizedWords;
-  //             print('\x1B[32m Detected word [2]: $newText\x1B[0m');
-
-  //             if (newText.toLowerCase() != _lastCommand) {
-  //               _lastCommand = newText.toLowerCase();
-
-  //               setState(() {
-  //                 _text = newText;
-  //               });
-
-  //               if (_lastCommand!.contains('capture') && !_isActivated) {
-  //                 setState(() {
-  //                   _isActivated = true;
-  //                   _text = '';
-  //                 });
-  //                 await captureAndProcess();
-  //               } else if (_lastCommand!.contains('stop') && !_isActivated) {
-  //                 setState(() {
-  //                   _isActivated = true;
-  //                   _text = '';
-  //                 });
-  //                 await _stopListening();
-  //               }
-  //             }
-  //           },
-  //         );
-
-  //       } else {
-  //         print("\x1B[31m Speech recognition initialization failed\x1B[0m");
-  //       }
-
-  //       _isInitializing = false;
-  //     }
-  //   } catch (e) {
-  //     print('\x1B[31m Error during speech recognition setup: $e\x1B[0m');
-  //     _isInitializing = false;
-  //   }
-  // }
 
   void _startListening() async {
     try {
@@ -364,6 +304,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
           _isActivated = true;
           _text = '';
         });
+        await _speech.stop();
         await captureAndProcess();
       } else if (_lastCommand.contains('stop') && !_isActivated) {
         setState(() {
