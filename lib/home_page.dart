@@ -55,13 +55,14 @@ class _MyHomePageState extends State<MyHomePage> {
 
   Future<void> _stopListening() async {
     try {
-      await _speech.stop();
+      await _speech.cancel();
       await Future.delayed(Duration(milliseconds: 300));
 
       isSpeechRecognitionActiveScreen1 = false;
       isSpeechRecognitionActiveScreen2 = true;
-
+      
       print("\x1B[32m Stop Speech Recognition\x1B[0m");
+      print("\x1B[32m islistening = ${_speech.isListening} \x1B[0m");
       print("\x1B[32m Screen 1: $isSpeechRecognitionActiveScreen1\x1B[0m");
       print("\x1B[32m Screen 2: $isSpeechRecognitionActiveScreen2\x1B[0m");
 
@@ -89,6 +90,17 @@ class _MyHomePageState extends State<MyHomePage> {
           _isActivated = false;
           _text = "Listening for commands...";
         });
+        final pauseFor = 15; // duration in seconds for pause between commands
+          final listenFor = 30; // duration in seconds for how long to listen
+
+          final options = stt.SpeechListenOptions(
+            cancelOnError: true,
+            partialResults: true,
+            listenMode: stt.ListenMode.dictation, // Using dictation mode for continuous speech
+            autoPunctuation: true,
+            enableHapticFeedback: true,
+          );
+
         _speech.listen(onResult: (result) async{
           final newText = result.recognizedWords;
           print('\x1B[32m Detected word [1]: $newText\x1B[0m');
@@ -111,7 +123,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 _listenForCameraPreference();
               }  
           } 
-        });
+        },
+          listenFor: Duration(seconds: listenFor),
+          pauseFor: Duration(seconds: pauseFor),
+          localeId: "en_US",
+          listenOptions: options,
+        );
       } else {
         print('\x1B[32m Speech recognition not available.\x1B[0m');
         _flutterTts.speak('Speech recognition not available.');
@@ -139,17 +156,24 @@ class _MyHomePageState extends State<MyHomePage> {
         print('\x1B[32m User preference: $preference\x1B[0m');
 
         if (preference.contains('mobile')) {
-          await _speech.stop();
+          setState(() {
+            _isActivated = true;
+            _text = '';
+            _lastCommand = '';
+          });
           useEsp = false;
           _navigateToCameraScreen(useEsp);
         } else if (preference.contains('external')) {
-          await _speech.stop();
+          setState(() {
+            _isActivated = true;
+            _text = '';
+            _lastCommand = '';
+          });
           useEsp = true;
           _navigateToCameraScreen(useEsp);
         } else if (result.finalResult) {
           // If final result but no match, restart listening
           print('\x1B[33m Unrecognized input, listening again...\x1B[0m');
-          await _speech.stop();
           Future.delayed(Duration(milliseconds: 300), () {
             _listenForCameraPreference();
           });
@@ -183,7 +207,7 @@ class _MyHomePageState extends State<MyHomePage> {
         arguments: {'useEsp32Cam': useEsp32Cam},
       ).then((_) {
         setState(() {
-          _lastCommand = ""; 
+          _lastCommand = ''; 
           _text = "Listening for commands...";
           _isActivated = false;
         });

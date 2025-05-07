@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'dart:convert';
 import 'package:camera/camera.dart';
+import 'package:provider/provider.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -25,7 +26,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   bool isLoading = false;
   bool _cameraActivationFailed = false;
   bool _isCameraInitialized = false;
-  bool _isActivated = false;
   bool micPerm = false;
   String _lastCommand = "";
   String _text = "Listening for commands...";
@@ -45,7 +45,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   late AudioPlayer _audioPlayer;
   late stt.SpeechToText _speech;
   late FlutterTts _flutterTts;
-  final bool _speechAvailable = false;
+  //final bool _speechAvailable = false;
   bool _isListening = false;
 
   @override
@@ -112,7 +112,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       print("\x1B[36m Initializing Speech Recognizer...\x1B[0m");
       bool available = await _speech.initialize(
         onStatus: onStatus,
-        onError: errorListener,
       );
       if (available) {
         print('\x1B[36m Speech recognition is available\x1B[0m');
@@ -126,16 +125,15 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
   Future<void> _initializeCamera() async {
     try {
+
       final cameras = await availableCameras();
-      final camera = cameras.first;
-
-      _cameraController = CameraController(
-        camera,
+      final _cameraController = CameraController(
+        cameras.firstWhere(
+            (camera) => camera.lensDirection == CameraLensDirection.back),
         ResolutionPreset.medium,
-        enableAudio: false,
-      );
+        enableAudio: false);
 
-      await _cameraController!.initialize();
+      await _cameraController.initialize();
 
       if (!mounted) return;
 
@@ -208,6 +206,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
       
       await _flutterTts.speak(sceneDescription);
+      _startListening();
 
     } catch (e) {
       setState(() {
@@ -223,7 +222,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   void onStatus(String val) {
     if(isSpeechRecognitionActiveScreen2){
       print('\x1B[32m onStatus [2]: $val\x1B[0m');
-      if (val == 'done' && !_isActivated) {
+      if (val == 'done') {
           _startListening();
       } else if (val == 'notListening') {
         setState(() {
@@ -233,31 +232,17 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
     }
   }
 
-  // Error listener callback
-  void errorListener(SpeechRecognitionError error) {
-    print('\x1B[31m Error occurred: ${error.errorMsg}\x1B[0m"');
-    
-    // Directly print the error details
-    print('\x1B[31m Received error status: ${error.errorMsg}, permanent: ${error.permanent}, listening: ${_speech.isListening}\x1B[0m"');
-
-    // Update UI to show the error
-    setState(() {
-      lastError = '\x1B[31m ${error.errorMsg} - Permanent: ${error.permanent}\x1B[0m"';
-    });
-  }
-
   void _startListening() async {
     try {
-      if (!_isActivated && !_isListening) {
+      if (!_isListening) {
           print("\x1B[32m Start Speech recognition\x1B[0m");
 
           setState(() {
             _isListening = true;
-            _isActivated = false;
             _text = "Listening for commands...";
           });
 
-          final pauseFor = 5; // duration in seconds for pause between commands
+          final pauseFor = 15; // duration in seconds for pause between commands
           final listenFor = 30; // duration in seconds for how long to listen
 
           final options = stt.SpeechListenOptions(
@@ -268,13 +253,10 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
             enableHapticFeedback: true,
           );
 
-          _speech.listen(
+          await _speech.listen(
           onResult: (result) {
             _handleResultScreen2(result);
           },
-          onSoundLevelChange: (level) {
-              print("Sound level: $level");
-            },
             listenFor: Duration(seconds: listenFor),
             pauseFor: Duration(seconds: pauseFor),
             localeId: "en_US",
@@ -299,26 +281,32 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
         _text = newText;
       });
 
-      if (_lastCommand.contains('capture') && !_isActivated) {
+      if (_lastCommand.contains('capture')) {
         setState(() {
-          _isActivated = true;
           _text = '';
+          _lastCommand = '';
+          _isListening = false;
         });
-        await _speech.stop();
+        if (_speech.isListening) {
+          await _speech.stop();
+        }
         await captureAndProcess();
-      } else if (_lastCommand.contains('stop') && !_isActivated) {
+      } else if (_lastCommand.contains('stop')) {
         setState(() {
-          _isActivated = true;
           _text = '';
+          _lastCommand = '';
+          _isListening = false;
         });
         _stopCameraAndGoBack();
+      }else if (!_speech.isListening){
+        _startListening();
       }
     }
   } 
 
   Future<void> _stopListening() async {
     try {
-      await _speech.stop();
+      await _speech.cancel();
 
       isSpeechRecognitionActiveScreen2 = false;
       isSpeechRecognitionActiveScreen1 = true;
@@ -349,14 +337,18 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   void _stopCameraAndGoBack()async{
     try {
       await _stopListening();
+      await _cameraController?.dispose();
+
       print("\x1B[32m Navigating to landing page\x1B[0m"); 
-      Navigator.of(context).pushReplacementNamed('/').then((_) {
-        setState(() {
-          _isActivated = false; 
-          _text = "";
-          _cameraActivationFailed = false;
-        });
+      setState(() {
+        _text = "";
+        _cameraActivationFailed = false;
+        _lastCommand = '';
       });
+      print("\x1B[32m mounted = $mounted\x1B[0m"); 
+      if (mounted) {
+        Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);  // Navigate only after cleanup
+      }
     } catch (e) {
       print('\x1B[32m Navigation error: $e\x1B[0m');
     }
@@ -366,6 +358,9 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   void dispose() {
     _cameraController?.dispose();
     _speech.stop();
+    _speech.cancel();
+    _flutterTts.stop();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -469,15 +464,15 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
             SizedBox(height: 10),
 
-            ElevatedButton.icon(
-              icon: Icon(_isListening ? Icons.mic_off : Icons.mic),
-              label: Text(_isListening ? "Stop Listening" : "Start Listening"),
-              onPressed: _speechAvailable
-                  ? () {
-                      _isListening ? _stopListening() : _startListening();
-                    }
-                  : null,
-            ),
+            // ElevatedButton.icon(
+            //   icon: Icon(_isListening ? Icons.mic_off : Icons.mic),
+            //   label: Text(_isListening ? "Stop Listening" : "Start Listening"),
+            //   onPressed: _speechAvailable
+            //       ? () {
+            //           _isListening ? _stopListening() : _startListening();
+            //         }
+            //       : null,
+            // ),
 
             SizedBox(height: 30),
           ],
