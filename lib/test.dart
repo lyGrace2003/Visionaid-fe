@@ -6,8 +6,6 @@ import 'package:http/http.dart' as http;
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'dart:convert';
 import 'package:camera/camera.dart';
-import 'package:provider/provider.dart';
-import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:frontend/main.dart';
@@ -24,16 +22,14 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   bool useMobileCamera = true; // default
   bool initialized = false;
   String message = "Press the button to capture and process scene.";
-  bool isLoading = false;
+  bool isLoading = false;   //is model still loading
   bool _cameraActivationFailed = false;
   bool _isCameraInitialized = false;
-  bool micPerm = false;
+  bool micPerm = false;   //microphone permision
   String _lastCommand = "";
   String _text = "Listening for commands...";
   String lastError = '';
   
-  
-
   CameraController? _cameraController;
   Future<void>? _initializeControllerFuture;
 
@@ -128,13 +124,13 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
     try {
 
       final cameras = await availableCameras();
-      final _cameraController = CameraController(
+      _cameraController = CameraController(
         cameras.firstWhere(
             (camera) => camera.lensDirection == CameraLensDirection.back),
         ResolutionPreset.medium,
         enableAudio: false);
 
-      await _cameraController.initialize();
+      await _cameraController!.initialize();
 
       if (!mounted) return;
 

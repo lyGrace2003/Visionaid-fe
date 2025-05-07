@@ -33,19 +33,19 @@ class _MyHomePageState extends State<MyHomePage> {
     _checkPermissions();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    print("\x1B[32m didChangeDependencies called\x1B[0m");
-    if (isSpeechRecognitionActiveScreen1 == true) {
-      _startListening();
-    }
-  }
+  // @override
+  // void didChangeDependencies() {
+  //   super.didChangeDependencies();
+  //   print("\x1B[32m didChangeDependencies called\x1B[0m");
+  //   if (isSpeechRecognitionActiveScreen1 == true) {
+  //     _startListening();
+  //   }
+  // }
 
   void _checkPermissions() async {
     if (await Permission.microphone.request().isGranted) {
       print('\x1B[32m Microphone permission granted\x1B[0m');
-      
+
       await _flutterTts.speak(
         'Would you prefer to view previous scenes or describe a new one?'
       );
