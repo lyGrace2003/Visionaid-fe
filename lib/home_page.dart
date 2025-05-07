@@ -45,6 +45,10 @@ class _MyHomePageState extends State<MyHomePage> {
   void _checkPermissions() async {
     if (await Permission.microphone.request().isGranted) {
       print('\x1B[32m Microphone permission granted\x1B[0m');
+      
+      await _flutterTts.speak(
+        'Would you prefer to view previous scenes or describe a new one?'
+      );
       Future.delayed(Duration(milliseconds: 500), () {
         _startListening();
       });
@@ -121,6 +125,13 @@ class _MyHomePageState extends State<MyHomePage> {
                   'Command detected. Do you prefer the mobile camera or external camera?'
                 );
                 _listenForCameraPreference();
+              }else if (_lastCommand!.contains("previous") && !_isActivated){
+                setState(() {
+                    _isActivated = true;
+                    _text = '';
+                    _lastCommand = '';
+                  });
+                _navigateToSceneScreen();
               }  
           } 
         },
@@ -201,6 +212,9 @@ class _MyHomePageState extends State<MyHomePage> {
     try {
       await _stopListening();
       // Stop listening before navigating
+      await _flutterTts.speak(
+        'Navigating to Camera Screen'
+      );
       print('\x1B[32m Navigating to Camera Screen with ESP32-CAM: $useEsp32Cam\x1B[0m');
       navigatorKey.currentState?.pushNamed(
         '/camera',
@@ -210,6 +224,29 @@ class _MyHomePageState extends State<MyHomePage> {
           _lastCommand = ''; 
           _text = "Listening for commands...";
           _isActivated = false;
+        });
+      });
+    } catch (e) {
+      print('\x1B[32m Navigation error: $e\x1B[0m');
+    }
+  }
+
+  void _navigateToSceneScreen() async {
+    try {
+      await _speech.cancel();
+      await _flutterTts.speak(
+        'Navigating to Scene Log database'
+      );
+      // Stop listening before navigating
+      print('\x1B[32m Navigating to Scene Screen\x1B[0m');
+      navigatorKey.currentState?.pushNamed(
+        '/scene',
+      ).then((_) {
+        setState(() {
+          _lastCommand = ''; 
+          _text = "Listening for commands...";
+          _isActivated = false;
+          _isListening = false;
         });
       });
     } catch (e) {

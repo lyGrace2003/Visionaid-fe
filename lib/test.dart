@@ -1,6 +1,7 @@
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:frontend/utils/app_style.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_mjpeg/flutter_mjpeg.dart';
 import 'dart:convert';
@@ -374,7 +375,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
             _stopCameraAndGoBack();
           },
         ),
-        title: Text('Camera Page',style: TextStyle(fontSize: 10)),
+        title: Text('Camera Page',style: mBold.copyWith(fontSize: 18, color: mDarkpurple)),
       ),
       body: SingleChildScrollView(
         child: Column(
@@ -447,6 +448,8 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
             if (isLoading) CircularProgressIndicator(),
 
+            SizedBox(height: 25),
+
             Padding(
               padding: const EdgeInsets.all(16),
               child: Text(
@@ -455,6 +458,8 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
                 style: TextStyle(fontSize: 14),
               ),
             ),
+
+            SizedBox(height: 20),
 
             ElevatedButton.icon(
               icon: Icon(Icons.camera_alt),

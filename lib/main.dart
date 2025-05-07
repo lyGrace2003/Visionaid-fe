@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/home_page.dart';
+import 'package:frontend/scene_logs_page.dart';
 import 'package:frontend/test.dart';
 
 // Global Variables
@@ -25,7 +26,7 @@ class MyApp extends StatelessWidget {
         '/': (context) =>  MyHomePage(),
         //MyHomePage()
         '/camera': (context) => CaptureTestScreen(),
-        //CameraScreen()
+        '/scene': (context) => SceneLogsPage(),
       },
     );
   }
