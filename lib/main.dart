@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/camera_page.dart';
 import 'package:frontend/home_page.dart';
 import 'package:frontend/test.dart';
-import 'package:frontend/test_speech.dart';
 
 // Global Variables
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();

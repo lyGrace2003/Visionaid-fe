@@ -241,11 +241,11 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   CameraController? _cameraController;
   Future<void>? _initializeControllerFuture;
 
-  // final String djangoUrl = "http://172.30.10.69:8000/api/upload-image/";
-
   final String esp32CaptureUrl = "http://192.168.1.10/capture";
   final String esp32StreamUrl = "http://192.168.1.10:81/stream";
   final String djangoUrl = "http://192.168.1.28:8000/api/upload-image/";
+
+  // final String djangoUrl = "http://172.30.10.69:8000/api/upload-image/";
 
   late AudioPlayer _audioPlayer;
   late stt.SpeechToText _speech;

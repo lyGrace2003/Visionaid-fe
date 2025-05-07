@@ -4,6 +4,8 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 void main() => runApp(MyApp());
 
 class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -13,12 +15,14 @@ class MyApp extends StatelessWidget {
 }
 
 class SpeechRecognitionTest extends StatefulWidget {
+  const SpeechRecognitionTest({super.key});
+
   @override
   _SpeechRecognitionTestState createState() => _SpeechRecognitionTestState();
 }
 
 class _SpeechRecognitionTestState extends State<SpeechRecognitionTest> {
-  stt.SpeechToText _speech = stt.SpeechToText();
+  final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   String _text = "";
   Map<String, String> testPhrases = {
@@ -104,7 +108,7 @@ class _SpeechRecognitionTestState extends State<SpeechRecognitionTest> {
             ),
             ...testPhrases.entries.map((entry) {
               return Text('${entry.key}: ${entry.value}');
-            }).toList(),
+            }),
             SizedBox(height: 20),
             ElevatedButton(
               onPressed: _isListening ? _stopListening : _startListening,
@@ -125,7 +129,7 @@ class _SpeechRecognitionTestState extends State<SpeechRecognitionTest> {
                 "Test phrase ${entry.key} matched: ${entry.value ? 'Yes' : 'No'}",
                 style: TextStyle(fontSize: 16),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
