@@ -6,9 +6,9 @@ const Color mGrey = Color(0xff9397a0);
 const Color kLightGrey = Color(0xffa7a7a7);
 const Color mBlack = Color.fromARGB(255, 0, 0, 0);
 
-const Color mPurple = Color.fromRGBO(185, 80, 255, 1);
-const Color mDarkpurple = Color.fromARGB(255, 82, 1, 147);
-const Color mLightPurple = Color.fromRGBO(196, 116, 246, 1);
+const Color mPurple = Color.fromRGBO(2, 188, 20, 1);
+const Color mDarkpurple = Color.fromRGBO(1, 109, 43, 1);
+const Color mLightPurple = Color.fromRGBO(72, 252, 90, 1);
 
 const double mBorderRadius = 16.0;
 

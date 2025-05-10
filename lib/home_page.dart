@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_tts/flutter_tts.dart';
 import 'package:frontend/main.dart';
@@ -15,10 +16,10 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   late stt.SpeechToText _speech;
+    late AudioPlayer _audioPlayer;
   late FlutterTts _flutterTts;
   bool _isListening = false;
   bool _isActivated = false; 
-  bool _isInitializing  = false;
   String _text = "Listening for commands...";
   String? _lastCommand;
   bool useEsp = false;
@@ -28,9 +29,15 @@ class _MyHomePageState extends State<MyHomePage> {
     super.initState();
     _speech = stt.SpeechToText();
     _flutterTts = FlutterTts();
+    _audioPlayer = AudioPlayer();
 
     _flutterTts.awaitSpeakCompletion(true);
     _checkPermissions();
+   Future.delayed(Duration(milliseconds: 500), () {
+      if (!_isListening) {
+        _startListening();
+      }
+    });
   }
 
   // @override
@@ -45,10 +52,6 @@ class _MyHomePageState extends State<MyHomePage> {
   void _checkPermissions() async {
     if (await Permission.microphone.request().isGranted) {
       print('\x1B[32m Microphone permission granted\x1B[0m');
-
-      await _flutterTts.speak(
-        'Would you prefer to view previous scenes or describe a new one?'
-      );
       Future.delayed(Duration(milliseconds: 500), () {
         _startListening();
       });
@@ -57,32 +60,27 @@ class _MyHomePageState extends State<MyHomePage> {
     }
   }
 
-  Future<void> _stopListening() async {
-    try {
-      await _speech.cancel();
-      await Future.delayed(Duration(milliseconds: 300));
+  Future<void> _playSound() async {
+    await _audioPlayer.play(AssetSource('sounds/notify.mp3'));
+  }
+  
 
-      isSpeechRecognitionActiveScreen1 = false;
-      isSpeechRecognitionActiveScreen2 = true;
-      
-      print("\x1B[32m Stop Speech Recognition\x1B[0m");
-      print("\x1B[32m islistening = ${_speech.isListening} \x1B[0m");
-      print("\x1B[32m Screen 1: $isSpeechRecognitionActiveScreen1\x1B[0m");
-      print("\x1B[32m Screen 2: $isSpeechRecognitionActiveScreen2\x1B[0m");
-
-      setState(() {
-        _isListening = false;
-      });
-    } catch (e) {
-      print("Stop failure: $e");
+  void onStatus(String val) {
+    if (isSpeechRecognitionActiveScreen1) {
+      print('\x1B[32m onStatus [1]: $val\x1B[0m');
+      if (val == 'done' && !_isActivated) {
+        _startListening();
+      } else if (val == 'notListening') {
+        setState(() {
+          _isListening = false; 
+        });
+      }
     }
   }
 
-
   void _startListening() async {
-  if (isSpeechRecognitionActiveScreen1 == true && _isActivated == false && 
-  _isListening == false && _isInitializing == false) {
-    _isInitializing  = true;
+  if (isSpeechRecognitionActiveScreen1 && !_isActivated && 
+  !_isListening ) {
     bool available = await _speech.initialize(onStatus: onStatus);
     
     try {
@@ -105,6 +103,7 @@ class _MyHomePageState extends State<MyHomePage> {
             enableHapticFeedback: true,
           );
 
+        await _playSound();
         _speech.listen(onResult: (result) async{
           final newText = result.recognizedWords;
           print('\x1B[32m Detected word [1]: $newText\x1B[0m');
@@ -114,25 +113,18 @@ class _MyHomePageState extends State<MyHomePage> {
               setState(() {
                 _text = newText;
               });
-              if (_lastCommand!.contains('describe') && !_isActivated) {
+              if (_lastCommand!.contains('activate') && !_isActivated) {
                 print('\x1B[32m Activating CameraScreen\x1B[0m');
                 setState(() {
                     _isActivated = true;
                     _text = '';
                     _lastCommand = '';
                   });
-                await _flutterTts.speak(
-                  'Command detected. Do you prefer the mobile camera or external camera?'
-                );
-                _listenForCameraPreference();
-              }else if (_lastCommand!.contains("previous") && !_isActivated){
-                setState(() {
-                    _isActivated = true;
-                    _text = '';
-                    _lastCommand = '';
-                  });
-                _navigateToSceneScreen();
-              }  
+                _speech.stop();
+                await _flutterTts.speak('Please state describe to create new scene generation or previous to view previous descriptions');
+                await Future.delayed(Duration(milliseconds: 500));
+                _handlePostActivateCommand();
+              } 
           } 
         },
           listenFor: Duration(seconds: listenFor),
@@ -146,10 +138,49 @@ class _MyHomePageState extends State<MyHomePage> {
       }
     } catch (e) {
       print('\x1B[32m Error initializing speech recognition: $e\x1B[0m');
-    } finally {
-      _isInitializing = false;
-    }
+    } 
   }
+}
+void _handlePostActivateCommand() async {
+  if (_speech.isListening) await _speech.stop();
+  setState(() {
+    _isListening = true;
+  });
+  await _playSound();
+  _speech.listen(
+    onResult: (result) async {
+      final response = result.recognizedWords.toLowerCase().trim();
+      print('\x1B[32m User follow-up response: $response\x1B[0m');
+
+      if (response.contains('describe')) {
+        print('\x1B[32m Activating CameraScreen\x1B[0m');
+        setState(() {
+          _isActivated = true;
+          _text = '';
+          _lastCommand = '';
+        });
+        await _flutterTts.speak(
+          'Command detected. Do you prefer the mobile camera or external camera?',
+        );
+        await Future.delayed(Duration(milliseconds: 500));
+        _listenForCameraPreference();
+      } else if (response.contains('previous')) {
+        print('\x1B[32m Navigating to previous scenes\x1B[0m');
+        setState(() {
+          _isActivated = true;
+          _text = '';
+          _lastCommand = '';
+        });
+        _navigateToSceneScreen();
+      } else if (result.finalResult) {
+        // Retry listening if no match
+        print('\x1B[33m Unrecognized input, listening again...\x1B[0m');
+        Future.delayed(Duration(milliseconds: 300), () {
+          _handlePostActivateCommand();
+        });
+      }
+    },
+  );
 }
 
   void _listenForCameraPreference() async {
@@ -160,7 +191,7 @@ class _MyHomePageState extends State<MyHomePage> {
     setState(() {
       _isListening = true;
     });
-
+    await _playSound();
     _speech.listen(
       onResult: (result) async {
         String preference = result.recognizedWords.toLowerCase();
@@ -193,18 +224,24 @@ class _MyHomePageState extends State<MyHomePage> {
     );
   }
 
+  Future<void> _stopListening() async {
+    try {
+      await _speech.cancel();
+      await Future.delayed(Duration(milliseconds: 300));
 
+      // isSpeechRecognitionActiveScreen1 = false;
+      // isSpeechRecognitionActiveScreen2 = true;
+      
+      print("\x1B[32m Stop Speech Recognition\x1B[0m");
+      // print("\x1B[32m islistening = ${_speech.isListening} \x1B[0m");
+      // print("\x1B[32m Screen 1: $isSpeechRecognitionActiveScreen1\x1B[0m");
+      // print("\x1B[32m Screen 2: $isSpeechRecognitionActiveScreen2\x1B[0m");
 
-  void onStatus(String val) {
-    if (isSpeechRecognitionActiveScreen1) {
-      print('\x1B[32m onStatus [1]: $val\x1B[0m');
-      if (val == 'done' && !_isActivated) {
-        _startListening();
-      } else if (val == 'notListening') {
-        setState(() {
-          _isListening = false; 
-        });
-      }
+      setState(() {
+        _isListening = false;
+      });
+    } catch (e) {
+      print("Stop failure: $e");
     }
   }
 

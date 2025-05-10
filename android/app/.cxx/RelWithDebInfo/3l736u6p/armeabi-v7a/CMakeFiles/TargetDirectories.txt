@@ -1,0 +1,2 @@
+C:/Users/User/OneDrive/Desktop/thesis/VisionAid/frontend/android/app/.cxx/RelWithDebInfo/3l736u6p/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/User/OneDrive/Desktop/thesis/VisionAid/frontend/android/app/.cxx/RelWithDebInfo/3l736u6p/armeabi-v7a/CMakeFiles/rebuild_cache.dir

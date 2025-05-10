@@ -26,14 +26,14 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
   bool _cameraActivationFailed = false;
   bool _isCameraInitialized = false;
   bool micPerm = false;   //microphone permision
-  String _lastCommand = "";
+  // String _lastCommand = "";
   String _text = "Listening for commands...";
   String lastError = '';
   
   CameraController? _cameraController;
   Future<void>? _initializeControllerFuture;
 
-  //final String djangoUrl = "http://172.30.10.69:8000/api/upload-image/";
+  //final String djangoUrl = "http://172.29.2.190:8000/api/upload-image/";
 
   final String esp32CaptureUrl = "http://192.168.1.10/capture";
   final String esp32StreamUrl = "http://192.168.1.10:81/stream";
@@ -74,13 +74,12 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
           print('\x1B[34mReceived useEsp32Cam: $useEsp32Cam => useMobileCamera: $useMobileCamera\x1B[0m');
 
-          if(isSpeechRecognitionActiveScreen2){
             if (!useEsp32Cam) {
               _initializeCamera();
-            }else{
-              _initializeSpeechRecognizer();
             }
-          }
+            // else{
+            //   _initializeSpeechRecognizer();
+            // }
         }
         initialized = true;
       }
@@ -92,7 +91,6 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       print('\x1B[31m Microphone permission denied\x1B[0m');
       return;
     }
-
     print('\x1B[32m Microphone permission granted\x1B[0m');
     print("\x1B[32m Screen 1 : $isSpeechRecognitionActiveScreen1\x1B[0m");
     print("\x1B[32m Screen 2 : $isSpeechRecognitionActiveScreen2\x1B[0m");
@@ -103,21 +101,21 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
     }
   }
 
-  // Initialize the speech recognition service
-  void _initializeSpeechRecognizer() async {
-    if (micPerm){
-      print("\x1B[36m Initializing Speech Recognizer...\x1B[0m");
-      bool available = await _speech.initialize(
-        onStatus: onStatus,
-      );
-      if (available) {
-        print('\x1B[36m Speech recognition is available\x1B[0m');
-        _startListening();
-      } else {
-        print('\x1B[36m Speech recognition is not available\x1B[0m');
-      }
-    }
-  }
+  // // Initialize the speech recognition service
+  // void _initializeSpeechRecognizer() async {
+  //   if (micPerm){
+  //     print("\x1B[36m Initializing Speech Recognizer...\x1B[0m");
+  //     bool available = await _speech.initialize(
+  //       onStatus: onStatus,
+  //     );
+  //     if (available) {
+  //       print('\x1B[36m Speech recognition is available\x1B[0m');
+  //       _startListening();
+  //     } else {
+  //       print('\x1B[36m Speech recognition is not available\x1B[0m');
+  //     }
+  //   }
+  // }
 
 
   Future<void> _initializeCamera() async {
@@ -142,9 +140,9 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
       print("\x1B[32m Camera initialized\x1B[0m");
 
-      if (_isCameraInitialized || !_cameraActivationFailed) {
-          _initializeSpeechRecognizer();
-        }
+      // if (_isCameraInitialized || !_cameraActivationFailed) {
+      //     _initializeSpeechRecognizer();
+      //   }
 
     } catch (e) {
       print("\x1B[31m Camera initialization failed: $e\x1B[0m");
@@ -203,7 +201,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
 
       
       await _flutterTts.speak(sceneDescription);
-      _startListening();
+      // _startListening();
 
     } catch (e) {
       setState(() {
@@ -216,109 +214,109 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
     }
   }
 
-  void onStatus(String val) {
-    if(isSpeechRecognitionActiveScreen2){
-      print('\x1B[32m onStatus [2]: $val\x1B[0m');
-      if (val == 'done') {
-          _startListening();
-      } else if (val == 'notListening') {
-        setState(() {
-          _isListening = false;
-        });
-      }
-    }
-  }
+  // void onStatus(String val) {
+  //   if(isSpeechRecognitionActiveScreen2){
+  //     print('\x1B[32m onStatus [2]: $val\x1B[0m');
+  //     if (val == 'done') {
+  //         _startListening();
+  //     } else if (val == 'notListening') {
+  //       setState(() {
+  //         _isListening = false;
+  //       });
+  //     }
+  //   }
+  // }
 
-  void _startListening() async {
-    try {
-      if (!_isListening) {
-          print("\x1B[32m Start Speech recognition\x1B[0m");
+  // void _startListening() async {
+  //   try {
+  //     if (!_isListening) {
+  //         print("\x1B[32m Start Speech recognition\x1B[0m");
 
-          setState(() {
-            _isListening = true;
-            _text = "Listening for commands...";
-          });
+  //         setState(() {
+  //           _isListening = true;
+  //           _text = "Listening for commands...";
+  //         });
 
-          final pauseFor = 15; // duration in seconds for pause between commands
-          final listenFor = 30; // duration in seconds for how long to listen
+  //         final pauseFor = 15; // duration in seconds for pause between commands
+  //         final listenFor = 30; // duration in seconds for how long to listen
 
-          final options = stt.SpeechListenOptions(
-            cancelOnError: true,
-            partialResults: true,
-            listenMode: stt.ListenMode.dictation, // Using dictation mode for continuous speech
-            autoPunctuation: true,
-            enableHapticFeedback: true,
-          );
+  //         final options = stt.SpeechListenOptions(
+  //           cancelOnError: true,
+  //           partialResults: true,
+  //           listenMode: stt.ListenMode.dictation, // Using dictation mode for continuous speech
+  //           autoPunctuation: true,
+  //           enableHapticFeedback: true,
+  //         );
 
-          await _speech.listen(
-          onResult: (result) {
-            _handleResultScreen2(result);
-          },
-            listenFor: Duration(seconds: listenFor),
-            pauseFor: Duration(seconds: pauseFor),
-            localeId: "en_US",
-            listenOptions: options,
-          );
-        } else {
-          print("\x1B[31m Speech recognition initialization failed\x1B[0m");
-        }
-    } catch (e) {
-      print('\x1B[31m Error during speech recognition setup: $e\x1B[0m');
-    }
-  }
+  //         await _speech.listen(
+  //         onResult: (result) {
+  //           _handleResultScreen2(result);
+  //         },
+  //           listenFor: Duration(seconds: listenFor),
+  //           pauseFor: Duration(seconds: pauseFor),
+  //           localeId: "en_US",
+  //           listenOptions: options,
+  //         );
+  //       } else {
+  //         print("\x1B[31m Speech recognition initialization failed\x1B[0m");
+  //       }
+  //   } catch (e) {
+  //     print('\x1B[31m Error during speech recognition setup: $e\x1B[0m');
+  //   }
+  // }
 
-  Future<void> _handleResultScreen2(SpeechRecognitionResult result) async {
-    final newText = result.recognizedWords;
-    print('\x1B[32m Detected word [2]: $newText\x1B[0m');
+  // Future<void> _handleResultScreen2(SpeechRecognitionResult result) async {
+  //   final newText = result.recognizedWords;
+  //   print('\x1B[32m Detected word [2]: $newText\x1B[0m');
 
-    if (newText.toLowerCase() != _lastCommand) {
-      _lastCommand = newText.toLowerCase();
+  //   if (newText.toLowerCase() != _lastCommand) {
+  //     _lastCommand = newText.toLowerCase();
 
-      setState(() {
-        _text = newText;
-      });
+  //     setState(() {
+  //       _text = newText;
+  //     });
 
-      if (_lastCommand.contains('capture')) {
-        setState(() {
-          _text = '';
-          _lastCommand = '';
-          _isListening = false;
-        });
-        if (_speech.isListening) {
-          await _speech.stop();
-        }
-        await captureAndProcess();
-      } else if (_lastCommand.contains('stop')) {
-        setState(() {
-          _text = '';
-          _lastCommand = '';
-          _isListening = false;
-        });
-        _stopCameraAndGoBack();
-      }else if (!_speech.isListening){
-        _startListening();
-      }
-    }
-  } 
+  //     if (_lastCommand.contains('capture')) {
+  //       setState(() {
+  //         _text = '';
+  //         _lastCommand = '';
+  //         _isListening = false;
+  //       });
+  //       if (_speech.isListening) {
+  //         await _speech.stop();
+  //       }
+  //       await captureAndProcess();
+  //     } else if (_lastCommand.contains('stop')) {
+  //       setState(() {
+  //         _text = '';
+  //         _lastCommand = '';
+  //         _isListening = false;
+  //       });
+  //       _stopCameraAndGoBack();
+  //     }else if (!_speech.isListening){
+  //       _startListening();
+  //     }
+  //   }
+  // } 
 
-  Future<void> _stopListening() async {
-    try {
-      await _speech.cancel();
+  // Future<void> _stopListening() async {
+  //   try {
+  //     await _speech.cancel();
 
-      isSpeechRecognitionActiveScreen2 = false;
-      isSpeechRecognitionActiveScreen1 = true;
+  //     isSpeechRecognitionActiveScreen2 = false;
+  //     isSpeechRecognitionActiveScreen1 = true;
 
-      print("\x1B[32m Stop Speech Recognition in CameraScreen\x1B[0m");
-      print("\x1B[32m Screen 1 : $isSpeechRecognitionActiveScreen1\x1B[0m");
-      print("\x1B[32m Screen 2 : $isSpeechRecognitionActiveScreen2\x1B[0m");
+  //     print("\x1B[32m Stop Speech Recognition in CameraScreen\x1B[0m");
+  //     print("\x1B[32m Screen 1 : $isSpeechRecognitionActiveScreen1\x1B[0m");
+  //     print("\x1B[32m Screen 2 : $isSpeechRecognitionActiveScreen2\x1B[0m");
 
-      setState(() {
-        _isListening = false;
-      });
-    } catch (e) {
-      print("\x1B[32m Stop failure: $e\x1B[0m");
-    }
-  }
+  //     setState(() {
+  //       _isListening = false;
+  //     });
+  //   } catch (e) {
+  //     print("\x1B[32m Stop failure: $e\x1B[0m");
+  //   }
+  // }
 
   void _playFailureSound() async {
     if (!_cameraActivationFailed) {
@@ -330,19 +328,24 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
       _stopCameraAndGoBack();
     }
   }
+  
 
   void _stopCameraAndGoBack()async{
     try {
-      await _stopListening();
-      await _cameraController?.dispose();
+      // await _stopListening();
+      if (_cameraController != null) {
+        await _cameraController?.dispose();
+        _cameraController = null;
+        _initializeControllerFuture = null;
+      }
 
       print("\x1B[32m Navigating to landing page\x1B[0m"); 
       setState(() {
         _text = "";
         _cameraActivationFailed = false;
-        _lastCommand = '';
+        // _lastCommand = '';
       });
-      print("\x1B[32m mounted = $mounted\x1B[0m"); 
+
       if (mounted) {
         Navigator.pushNamedAndRemoveUntil(context, '/', (route) => false);  // Navigate only after cleanup
       }
@@ -379,6 +382,7 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
             SizedBox(height: 16),
             SwitchListTile(
               title: Text("Use Android Camera Instead"),
+              activeColor: mDarkpurple,
               value: useMobileCamera,
               onChanged: (val) async {
                 setState(() {
@@ -458,8 +462,10 @@ class _CaptureTestScreenState extends State<CaptureTestScreen> {
             SizedBox(height: 20),
 
             ElevatedButton.icon(
-              icon: Icon(Icons.camera_alt),
-              label: Text("Capture & Process OCR"),
+              icon: Icon(Icons.camera_alt,color: mPurple),
+              label: Text("Capture & Process OCR", style: mBold.copyWith(fontSize: 14, color: mDarkpurple)),
+              style: ElevatedButton.styleFrom(
+                ),
               onPressed: isLoading ? null : captureAndProcess,
             ),
 

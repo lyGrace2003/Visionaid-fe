@@ -19,7 +19,7 @@ class _SceneLogsPageState extends State<SceneLogsPage>
   List<Map<String, dynamic>> sceneLogs = [];
   late FlutterTts flutterTts;
   final String djangoSceneUrl = "http://192.168.1.4:8000/api/scene-logs/";
-
+  //final String djangoSceneUrl = "http://172.29.2.190:8000/api/scene-logs/";   
   @override
   void initState() {
     super.initState();
